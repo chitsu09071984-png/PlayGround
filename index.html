@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#102f3a" />
+  <link rel="icon" href="data:," />
+  <title>Barrel Bounce — Captain's Reset</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&family=Rye&display=swap');
+    :root{--ink:#f6f1df;--muted:#a9c1bc;--teal:#7ed4bd;--gold:#ffcc72;--coral:#ff806d;--navy:#102f3a;--panel:rgba(10,38,47,.78)}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#102f3a;color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;touch-action:none}
+    body{min-height:100dvh;background:radial-gradient(ellipse at 51% 42%,#31636a 0,#1d4b56 38%,#102f3a 78%)}
+    #app{position:relative;width:100%;height:100%;min-height:540px;overflow:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+    #game-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+    .grain{position:absolute;inset:0;pointer-events:none;opacity:.11;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");mix-blend-mode:soft-light}
+    .topbar{position:absolute;z-index:3;left:clamp(18px,5vw,68px);right:clamp(18px,5vw,68px);top:calc(env(safe-area-inset-top) + 22px);display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+    .brand{display:flex;align-items:center;gap:12px}.brand-mark{width:37px;height:37px;border:1px solid rgba(255,204,114,.62);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:19px;background:rgba(7,31,37,.28)}
+    .brand-name{font:500 11px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.18em;color:#d0ded4}.brand-name b{display:block;color:var(--gold);font-weight:500;margin-top:3px;letter-spacing:.22em}
+    .top-right{display:flex;gap:10px;align-items:center;pointer-events:auto}.round-pill,.icon-btn{height:39px;border:1px solid rgba(202,225,209,.23);border-radius:999px;background:rgba(8,33,40,.44);color:var(--ink);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}.round-pill{padding:0 15px;gap:8px;font:11px 'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase}.round-pill span{color:var(--gold)}.icon-btn{width:39px;font-size:16px;cursor:pointer;pointer-events:auto}
+    .hero-title{position:absolute;z-index:2;top:12%;left:0;width:100%;text-align:center;pointer-events:none;text-shadow:0 4px 20px rgba(8,35,43,.18)}.eyebrow{font:11px 'DM Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--teal);margin:0 0 8px}.hero-title h1{font:clamp(36px,6.6vw,72px)/.95 'Rye',Georgia,serif;letter-spacing:.025em;margin:0;color:#fff4d8}.hero-title h1 em{font-style:normal;color:var(--gold)}.hero-title p{margin:12px 0 0;font-size:13px;color:#c5d8ce;letter-spacing:.02em}
+    .status-card{position:absolute;z-index:3;left:50%;top:25%;transform:translateX(-50%);min-width:min(330px,calc(100vw - 42px));text-align:center;pointer-events:none}.status-title{font:500 12px 'DM Mono',monospace;letter-spacing:.11em;text-transform:uppercase;color:var(--gold)}.status-copy{margin-top:5px;color:#deebe0;font-size:13px;text-shadow:0 1px 5px #183d45}
+    .hint{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,240,201,.24);background:rgba(10,38,47,.56);padding:8px 13px;border-radius:20px;font:10px 'DM Mono',monospace;letter-spacing:.04em;color:#e5eee0;margin-top:10px;backdrop-filter:blur(6px)}.hint .dot{width:6px;height:6px;background:var(--teal);border-radius:50%;box-shadow:0 0 9px var(--teal)}
+    .bottom-ui{position:absolute;z-index:4;bottom:calc(env(safe-area-inset-bottom) + 22px);left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 32px));text-align:center}.swords-label{display:flex;justify-content:center;align-items:center;gap:10px;color:#c2d8d0;font:10px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.2em;margin-bottom:10px;text-shadow:0 1px 5px #163a40}.swords-label:before,.swords-label:after{content:'';height:1px;width:28px;background:rgba(206,225,205,.36)}.swords{display:flex;gap:9px;justify-content:center}.sword-btn{--blade:#80d9cb;position:relative;display:grid;grid-template-columns:30px auto;align-items:center;gap:8px;text-align:left;min-width:94px;height:56px;padding:0 13px;border:1px solid rgba(225,237,214,.25);border-radius:12px;background:rgba(9,34,41,.79);color:var(--ink);font-family:'DM Sans',sans-serif;cursor:pointer;box-shadow:0 5px 16px rgba(4,21,26,.14);transition:transform .18s,border-color .18s,background .18s;backdrop-filter:blur(9px);touch-action:manipulation}.sword-btn:hover:not(:disabled){transform:translateY(-3px);border-color:var(--blade);background:rgba(14,48,54,.92)}.sword-btn:active:not(:disabled){transform:translateY(1px)}.sword-btn:disabled{opacity:.42;cursor:default}.sword-icon{position:relative;width:25px;height:31px;display:block}.sword-icon:before{content:'';position:absolute;left:10px;top:0;width:5px;height:23px;background:linear-gradient(90deg,#f5f2d9,var(--blade));clip-path:polygon(0 0,100% 0,70% 100%,30% 100%);filter:drop-shadow(0 0 3px color-mix(in srgb,var(--blade),transparent 38%))}.sword-icon:after{content:'';position:absolute;left:5px;top:20px;width:15px;height:3px;background:#d7ac62;border-radius:2px;box-shadow:7px 5px 0 -1px #b97848}.sword-text{font-size:11px;font-weight:700;line-height:1.15}.sword-text small{display:block;margin-top:4px;color:#97b1a9;font:9px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em}.subhint{font:10px 'DM Mono',monospace;color:#abc6bb;margin-top:10px;letter-spacing:.025em;text-shadow:0 1px 5px #183d45}
+    .score{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 77px);left:clamp(18px,5vw,68px);display:flex;gap:8px;align-items:center;color:#d5e5d8;font:10px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.12em;pointer-events:none}
+    @media(min-width:601px){.score{top:calc(env(safe-area-inset-top) + 116px)}}.score strong{font-size:14px;color:var(--gold);font-weight:500}
+    .toast{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);padding:12px 20px;border-radius:999px;background:#fff0ca;color:#193e42;font:12px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.12em;box-shadow:0 8px 28px #051c2099;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s}.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    .drag-note{position:absolute;z-index:3;left:50%;top:45%;transform:translate(-50%,-50%);font:11px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.13em;color:#fff1c8;background:rgba(16,47,58,.65);border:1px solid rgba(255,240,201,.32);border-radius:30px;padding:9px 14px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}.drag-note.on{opacity:1}
+    .sound-on{color:var(--gold)}
+    @media(min-width:601px){.hero-title{top:4%}.status-card{top:30%}}
+    @media(max-width:600px){.brand-name{display:none}}
+    @media(max-width:600px){#app{min-height:520px}.topbar{top:calc(env(safe-area-inset-top) + 14px)}.hero-title{top:8%;}.hero-title h1{font-size:clamp(32px,9vw,45px)}.hero-title p{font-size:11px;margin-top:8px}.eyebrow{font-size:9px}.status-card{top:30%;}.status-title{font-size:11px}.status-copy{font-size:11px}.score{top:calc(env(safe-area-inset-top) + 96px)}.bottom-ui{bottom:calc(env(safe-area-inset-bottom) + 13px);width:calc(100% - 24px)}.swords{gap:6px}.sword-btn{min-width:0;flex:1;height:52px;padding:0 7px;grid-template-columns:23px auto;gap:4px;border-radius:10px}.sword-icon{transform:scale(.85);transform-origin:center}.sword-text{font-size:10px}.sword-text small{font-size:8px}.subhint{font-size:9px;margin-top:8px}.brand-name{font-size:9px}.brand-mark{width:32px;height:32px}.round-pill{height:34px;padding:0 10px;font-size:9px}.icon-btn{width:34px;height:34px}}
+    @media(max-height:650px){.hero-title{top:12%}.hero-title h1{font-size:clamp(34px,5vw,54px)}.status-card{top:25%}.bottom-ui{bottom:10px}.sword-btn{height:46px}.score{top:67px}}
+  </style>
+</head>
+<body>
+  <main id="app">
+    <canvas id="game-canvas" aria-label="A 3D pirate barrel game. Tap swords, then drag the pirate back into the barrel."></canvas>
+    <div class="grain"></div>
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark">✦</div><div class="brand-name">The little<b>pirate club</b></div></div>
+      <div class="top-right"><div class="round-pill">ROUND <span id="round-number">01</span></div><button id="sound-button" class="icon-btn sound-on" aria-label="Toggle sound">♫</button></div>
+    </header>
+    <section class="hero-title"><p class="eyebrow">A small game of big nerve</p><h1>BARREL <em>BOUNCE</em></h1><p>Brave the blades. Catch the captain.</p></section>
+    <div class="score">CAPTAINS CAUGHT <strong id="score">00</strong></div>
+    <section class="status-card" aria-live="polite"><div class="status-title" id="status-title">Make your move</div><div class="status-copy" id="status-copy">Slip a sword into the barrel… if you dare.</div><div class="hint" id="status-hint"><span class="dot"></span><span>One of these will send him flying</span></div></section>
+    <div class="drag-note" id="drag-note">Drag the captain down to the barrel</div>
+    <section class="bottom-ui"><div class="swords-label">Choose your blade</div><div class="swords" id="swords">
+      <button class="sword-btn" style="--blade:#82d8c6" data-color="#82d8c6"><span class="sword-icon"></span><span class="sword-text">Sea glass<small>01 · mint</small></span></button>
+      <button class="sword-btn" style="--blade:#f3bf66" data-color="#f3bf66"><span class="sword-icon"></span><span class="sword-text">Gold rush<small>02 · gold</small></span></button>
+      <button class="sword-btn" style="--blade:#f08068" data-color="#f08068"><span class="sword-icon"></span><span class="sword-text">Red tide<small>03 · coral</small></span></button>
+      <button class="sword-btn" style="--blade:#a7a5ed" data-color="#a7a5ed"><span class="sword-icon"></span><span class="sword-text">Stormy<small>04 · lilac</small></span></button>
+    </div><div class="subhint" id="subhint">Tap any blade. He'll pop out sooner or later.</div></section>
+    <div class="toast" id="toast">A perfect fit!</div>
+  </main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
+
+const canvas=document.querySelector('#game-canvas');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color('#244e57');
+scene.fog=new THREE.Fog('#244e57',13,28);
+const camera=new THREE.OrthographicCamera(-6,6,4.7,-4.7,.1,80);
+camera.position.set(0,5.25,10.5);camera.lookAt(0,1.3,0);
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+scene.add(new THREE.HemisphereLight('#d8f6e8','#773f2e',2.1));
+const key=new THREE.DirectionalLight('#fff0cb',3.3);key.position.set(-4,8,6);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=-7;key.shadow.camera.right=7;key.shadow.camera.top=8;key.shadow.camera.bottom=-6;scene.add(key);
+const rimLight=new THREE.DirectionalLight('#73d3c4',2.2);rimLight.position.set(5,4,-3);scene.add(rimLight);
+const fill=new THREE.PointLight('#ffbb78',20,12);fill.position.set(-3,2,4);scene.add(fill);
+const mat=(color,rough=.7,metal=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+const wood=mat('#975433'),woodLight=mat('#b46b3a'),woodDark=mat('#603b2c'),gold=mat('#e7b85e',.38,.62),black=mat('#201d23'),cream=mat('#f4dfb1'),red=mat('#a93637'),skin=mat('#d58b5e'),white=mat('#fff1d2'),blue=mat('#385866');
+const floor=new THREE.Mesh(new THREE.CircleGeometry(18,64),mat('#28545b'));floor.rotation.x=-Math.PI/2;floor.position.y=-.12;floor.receiveShadow=true;scene.add(floor);
+// Soft graphic backdrop flecks and distant deck planks.
+const deck=new THREE.Mesh(new THREE.PlaneGeometry(200,200),mat('#264e55'));deck.rotation.x=-Math.PI/2;deck.position.y=-.14;deck.receiveShadow=true;scene.add(deck);
+for(let i=-5;i<=5;i++){const line=new THREE.Mesh(new THREE.BoxGeometry(16,.015,.025),mat('#3b6566'));line.position.set(0,-.125,i*1.05);scene.add(line)}
+const barrel=new THREE.Group();scene.add(barrel);
+const barrelH=2.05;
+const profile=[new THREE.Vector2(.82,0),new THREE.Vector2(.94,.12),new THREE.Vector2(1.05,.48),new THREE.Vector2(1.12,1.02),new THREE.Vector2(1.08,1.55),new THREE.Vector2(.97,1.92),new THREE.Vector2(.91,2.02)];
+const body=new THREE.Mesh(new THREE.LatheGeometry(profile,64),wood);body.position.y=0;body.castShadow=true;body.receiveShadow=true;barrel.add(body);
+// Dark top well, inner lip and warm rim.
+const hole=new THREE.Mesh(new THREE.CircleGeometry(.79,48),mat('#171f21',.95));hole.rotation.x=-Math.PI/2;hole.position.y=2.013;barrel.add(hole);
+const inner=new THREE.Mesh(new THREE.CylinderGeometry(.77,.77,.55,48,1,true),woodDark);inner.position.y=1.76;barrel.add(inner);
+const rim=new THREE.Mesh(new THREE.TorusGeometry(.92,.095,14,64),gold);rim.rotation.x=Math.PI/2;rim.position.y=2.015;rim.castShadow=true;barrel.add(rim);
+for(const y of [.29,1.7]){const radius=y<1?.99:1.02;const hoop=new THREE.Mesh(new THREE.TorusGeometry(radius,.075,12,64),gold);hoop.rotation.x=Math.PI/2;hoop.position.y=y;hoop.castShadow=true;barrel.add(hoop)}
+// A real dark inner floor makes the open barrel read as a deep, obvious target.
+const insideFloor=new THREE.Mesh(new THREE.CircleGeometry(.73,48),woodDark);insideFloor.rotation.x=-Math.PI/2;insideFloor.position.set(0,1.48,0);barrel.add(insideFloor);
+// Hand-cut curved stave seams.
+const staveAngles=14;
+for(let i=0;i<staveAngles;i++){
+ const a=i/staveAngles*Math.PI*2;const pts=[];
+ for(let j=0;j<=12;j++){const y=.12+j/12*1.8;const r=.93+.19*Math.sin(Math.PI*(y/2.02));pts.push(new THREE.Vector3(Math.cos(a)*r,y,Math.sin(a)*r))}
+ const curve=new THREE.CatmullRomCurve3(pts);const seam=new THREE.Mesh(new THREE.TubeGeometry(curve,24,.012,4,false),woodDark);barrel.add(seam);
+}
+// Rivets around iron-gold hoops.
+for(const y of [.29,1.7])for(let i=0;i<14;i++){const a=i/14*Math.PI*2;const r=y<1?.99:1.02;const rivet=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),mat('#f3d17f',.3,.55));rivet.position.set(Math.cos(a)*r,y,Math.sin(a)*r);barrel.add(rivet)}
+// Brass badge on the front.
+const badge=new THREE.Mesh(new THREE.CircleGeometry(.25,6),gold);badge.position.set(0,1.07,1.08);badge.rotation.z=Math.PI/6;barrel.add(badge);
+const badgeStar=new THREE.Mesh(new THREE.OctahedronGeometry(.13,0),cream);badgeStar.position.set(0,1.07,1.105);barrel.add(badgeStar);
+
+// Pirate, built as a friendly toy figurine from simple shapes.
+const pirate=new THREE.Group();scene.add(pirate);pirate.position.set(0,.35,.08);pirate.visible=false;pirate.userData.homeY=.35;
+const sphere=(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1)=>{const o=new THREE.Mesh(geometry,material);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o};
+// Boots and little legs.
+sphere(pirate,new THREE.SphereGeometry(.24,18,14),black,-.23,.2,.04,.9,.54,1.25);sphere(pirate,new THREE.SphereGeometry(.24,18,14),black,.23,.2,.04,.9,.54,1.25);
+sphere(pirate,new THREE.CylinderGeometry(.13,.16,.55,16),blue,-.22,.55,0,.9,1,1);sphere(pirate,new THREE.CylinderGeometry(.13,.16,.55,16),blue,.22,.55,0,.9,1,1);
+// Jacket and sash.
+sphere(pirate,new THREE.CapsuleGeometry(.43,.58,6,16),red,0,1.1,0,1,.95,.74);
+const sash=sphere(pirate,new THREE.TorusGeometry(.34,.08,10,28),gold,0,.76,.03,1,.8,1);sash.rotation.x=.18;
+// Head and neck.
+sphere(pirate,new THREE.CylinderGeometry(.15,.16,.2,16),skin,0,1.57,0);
+sphere(pirate,new THREE.SphereGeometry(.39,24,18),skin,0,1.91,.02,1,.98,.84);
+// Hair framing head.
+sphere(pirate,new THREE.SphereGeometry(.405,20,16),black,0,2.04,-.05,1.02,.58,.9);
+sphere(pirate,new THREE.SphereGeometry(.34,20,16),skin,0,1.91,.12,1,.95,.82);
+// Red bandana, top knot and skull-and-crossbones motif.
+const band=new THREE.Mesh(new THREE.TorusGeometry(.32,.08,10,28),red);band.position.set(0,2.17,0);band.scale.set(1,.72,1);pirate.add(band);
+sphere(pirate,new THREE.SphereGeometry(.12,12,10),red,.25,2.3,-.03,1.4,.75,1);
+// Hat brim + crown.
+sphere(pirate,new THREE.CylinderGeometry(.5,.5,.09,32),black,0,2.33,-.03,1,.35,.75);
+sphere(pirate,new THREE.CylinderGeometry(.25,.34,.34,24),black,0,2.51,-.03,1,.88,.8);
+const hatBand=new THREE.Mesh(new THREE.TorusGeometry(.29,.035,8,24),gold);hatBand.position.set(0,2.42,-.03);hatBand.scale.set(1,.8,.8);pirate.add(hatBand);
+// Face, eyepatch, eye and smile.
+sphere(pirate,new THREE.SphereGeometry(.042,12,10),black,-.13,1.96,.333,.8,.8,.45);
+sphere(pirate,new THREE.SphereGeometry(.047,12,10),white,.14,1.98,.332,.8,.8,.45);
+sphere(pirate,new THREE.SphereGeometry(.022,10,8),black,.15,1.98,.37);
+const patch=sphere(pirate,new THREE.SphereGeometry(.11,16,12),black,-.14,1.98,.34,1.25,.84,.35);
+const string=new THREE.Mesh(new THREE.TorusGeometry(.37,.012,6,24),black);string.position.set(0,2.01,.02);string.scale.set(1,.88,.8);pirate.add(string);
+// Moustache curls + smile.
+sphere(pirate,new THREE.SphereGeometry(.095,12,10),black,-.085,1.77,.34,1.15,.42,.55);sphere(pirate,new THREE.SphereGeometry(.095,12,10),black,.085,1.77,.34,1.15,.42,.55);
+const mouth=new THREE.Mesh(new THREE.TorusGeometry(.075,.012,6,16,Math.PI),black);mouth.position.set(0,1.77,.34);mouth.rotation.z=Math.PI;pirate.add(mouth);
+// Earring.
+sphere(pirate,new THREE.TorusGeometry(.065,.018,8,14),gold,.36,1.78,.11);
+// Arms / cuffs, articulated for a jaunty pose.
+const armL=new THREE.Group();armL.position.set(-.37,1.38,0);pirate.add(armL);sphere(armL,new THREE.CapsuleGeometry(.105,.4,4,10),red,-.18,-.03,0,1,1,.9).rotation.z=.82;sphere(armL,new THREE.SphereGeometry(.13,14,10),skin,-.34,-.24,.02);sphere(armL,new THREE.CylinderGeometry(.11,.11,.11,12),gold,-.29,-.16,.02).rotation.z=.82;
+const armR=new THREE.Group();armR.position.set(.37,1.38,0);pirate.add(armR);sphere(armR,new THREE.CapsuleGeometry(.105,.4,4,10),red,.2,.06,0,1,1,.9).rotation.z=-.66;sphere(armR,new THREE.SphereGeometry(.13,14,10),skin,.37,.22,.02);sphere(armR,new THREE.CylinderGeometry(.11,.11,.11,12),gold,.29,.15,.02).rotation.z=-.66;
+// Small skull emblem on jacket.
+sphere(pirate,new THREE.SphereGeometry(.1,12,10),cream,0,1.16,.31,1,.92,.35);sphere(pirate,new THREE.SphereGeometry(.025,8,6),black,-.035,1.17,.347);sphere(pirate,new THREE.SphereGeometry(.025,8,6),black,.035,1.17,.347);
+
+// Decorative sparkles and subtle sea-sky dots.
+const decor=new THREE.Group();scene.add(decor);
+for(let i=0;i<32;i++){const x=(Math.random()-.5)*12,y=2.4+Math.random()*4.6,z=-2.8-Math.random()*2;const s=new THREE.Mesh(new THREE.SphereGeometry(.018+Math.random()*.025,8,6),i%4===0?gold:mat('#a1d9c8'));s.position.set(x,y,z);decor.add(s)}
+
+const state={round:1,caught:0,turns:0,threshold:3+Math.floor(Math.random()*3),popped:false,dragging:false,muted:false,anim:'idle',animTime:0,roundLocked:false};
+const title=document.querySelector('#status-title'),copy=document.querySelector('#status-copy'),hint=document.querySelector('#status-hint'),subhint=document.querySelector('#subhint'),roundEl=document.querySelector('#round-number'),scoreEl=document.querySelector('#score'),dragNote=document.querySelector('#drag-note'),swordButtons=[...document.querySelectorAll('.sword-btn')];
+const audioCtx=()=>{if(!window._audio)window._audio=new (window.AudioContext||window.webkitAudioContext)();if(window._audio.state==='suspended')window._audio.resume();return window._audio};
+function tone(freq,dur,type='sine',vol=.08,slide=0){if(state.muted)return;try{const c=audioCtx(),o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(freq,c.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),c.currentTime+dur);g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(vol,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+dur);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur+.02)}catch(e){}}
+function clickSound(){tone(640,.07,'sine',.09,420);setTimeout(()=>tone(900,.1,'triangle',.065,260),45)}
+function thud(){tone(170,.15,'triangle',.08,-75)}
+function popSound(){tone(210,.24,'sawtooth',.09,430);setTimeout(()=>tone(590,.22,'triangle',.08,250),90)}
+function setStatus(a,b,c,showHint=true){title.textContent=a;copy.textContent=b;hint.style.display=showHint?'inline-flex':'none';if(c)hint.lastElementChild.textContent=c}
+function refreshButtons(){swordButtons.forEach(b=>b.disabled=state.popped||state.anim==='reset'||state.anim==='popping')}
+function chooseBlade(button){if(state.popped||state.anim!=='idle')return;state.turns++;tone(240+state.turns*17,.12,'triangle',.05,80);button.animate([{transform:'translateY(0)'},{transform:'translateY(4px) scale(.97)'},{transform:'translateY(0)'}],{duration:180});if(state.turns>=state.threshold){popPirate()}else{const left=state.threshold-state.turns;setStatus('A close call…',left===1?'The barrel is rattling. One more blade?':'The captain is still hiding. Try another blade.',`${left} ${left===1?'blade':'blades'} until the surprise`);subhint.textContent='No wrong moves here. Keep going!'}}
+swordButtons.forEach(b=>b.addEventListener('click',()=>chooseBlade(b)));
+function popPirate(){state.popped=true;state.anim='popping';state.animTime=0;pirate.visible=true;pirate.position.y=.36;pirate.rotation.set(0,0,0);setStatus('Ahoy, captain!', 'He made his escape! Drag him back into the barrel.', 'Catch him to start the next round',false);subhint.textContent='Press and hold the captain, then pull him down';refreshButtons();popSound();setTimeout(()=>{if(state.popped){dragNote.classList.add('on');setTimeout(()=>dragNote.classList.remove('on'),3300)}},650)}
+function resetCaptain(){if(!state.popped||state.anim==='reset')return;state.anim='reset';state.animTime=0;state.dragging=false;dragNote.classList.remove('on');state.caught++;scoreEl.textContent=String(state.caught).padStart(2,'0');clickSound();document.querySelector('#toast').classList.add('show');setTimeout(()=>document.querySelector('#toast').classList.remove('show'),1050);setStatus('Snug as a… pirate!', 'That was a satisfying little click.', 'Round complete! Pick a blade when ready',true);subhint.textContent='The captain is tucked in. Start another round whenever.';}
+function nextRound(){state.round++;roundEl.textContent=String(state.round).padStart(2,'0');state.turns=0;state.threshold=3+Math.floor(Math.random()*3);state.popped=false;state.anim='idle';pirate.visible=false;pirate.position.set(0,.35,.08);pirate.rotation.set(0,0,0);setStatus('Make your move','Slip a sword into the barrel… if you dare.','One of these will send him flying',true);subhint.textContent="Tap any blade. He'll pop out sooner or later.";refreshButtons()}
+
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),dragPlane=new THREE.Plane(new THREE.Vector3(0,0,1),-.08),intersection=new THREE.Vector3();
+function worldPointer(event){const r=canvas.getBoundingClientRect();pointer.x=(event.clientX-r.left)/r.width*2-1;pointer.y=-((event.clientY-r.top)/r.height*2-1);raycaster.setFromCamera(pointer,camera);raycaster.ray.intersectPlane(dragPlane,intersection);return intersection}
+function pickPirate(event){if(!state.popped||state.anim!=='idle')return false;worldPointer(event);const objs=[];pirate.traverse(o=>{if(o.isMesh)objs.push(o)});raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(objs,false);return hits.length>0}
+canvas.addEventListener('pointerdown',e=>{if(!pickPirate(e))return;e.preventDefault();canvas.setPointerCapture(e.pointerId);state.dragging=true;state.anim='drag';worldPointer(e);state.dragOffsetY=pirate.position.y-intersection.y;dragNote.classList.add('on');title.textContent='Bring him home';copy.textContent='Lower the captain into the barrel opening';});
+canvas.addEventListener('pointermove',e=>{if(!state.dragging)return;e.preventDefault();worldPointer(e);pirate.position.y=THREE.MathUtils.clamp(intersection.y+state.dragOffsetY,.42,3.8);pirate.position.x=THREE.MathUtils.clamp(intersection.x,-2.8,2.8);pirate.position.z=.08;pirate.rotation.z=THREE.MathUtils.clamp((intersection.x)*-.09,-.22,.22)});
+function endDrag(e){if(!state.dragging)return;state.dragging=false;dragNote.classList.remove('on');const near=Math.abs(pirate.position.x)<.84&&pirate.position.y<1.6;if(near){resetCaptain()}else{state.anim='idle';pirate.position.x=0;pirate.position.y=1.78;pirate.rotation.z=0;setStatus('Almost got him!', 'Hold the captain and pull him lower, right over the barrel.', 'Aim for the round opening',false);thud();setTimeout(()=>{if(state.popped&&state.anim==='idle')setStatus('He is still out!', 'Drag the captain down into the barrel to tuck him in.', 'Aim for the opening',false)},1750)}}
+canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercancel',endDrag);
+// For accessibility, dragging with a mouse/touch is the main catch action; keyboard supports sword selection.
+window.addEventListener('keydown',e=>{if(e.key>='1'&&e.key<='4')chooseBlade(swordButtons[Number(e.key)-1]);if((e.key===' '||e.key==='Enter')&&state.popped&&!state.dragging){pirate.position.x=0;pirate.position.y=.8;resetCaptain()}});
+document.querySelector('#sound-button').addEventListener('click',e=>{state.muted=!state.muted;e.currentTarget.textContent=state.muted?'♩':'♫';e.currentTarget.classList.toggle('sound-on',!state.muted);e.currentTarget.setAttribute('aria-label',state.muted?'Turn sound on':'Mute sound');if(!state.muted)clickSound()});
+
+// Responsive camera keeps the toy large without clipping the title or control row.
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);const aspect=w/h;const viewH=9.4;camera.left=-viewH*aspect/2;camera.right=viewH*aspect/2;camera.top=viewH/2;camera.bottom=-viewH/2;camera.updateProjectionMatrix();if(aspect<.72){camera.zoom=.91;camera.position.set(0,5.3,11.3)}else if(aspect>1.3){camera.zoom=1.3;camera.position.set(0,5.15,10.8)}else{camera.zoom=1;camera.position.set(0,5.25,10.5)}camera.lookAt(0,1.3,0);camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(canvas);resize();
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);const t=clock.elapsedTime;
+ if(state.anim==='popping'){state.animTime+=dt;const p=Math.min(1,state.animTime/1.05);const ease=1-Math.pow(1-p,3);pirate.position.y=.36+ease*1.42+Math.sin(p*Math.PI*4)*.11*(1-p);pirate.rotation.z=Math.sin(p*Math.PI*3)*.10*(1-p);if(p>=1){state.anim='idle';pirate.position.y=1.78;pirate.rotation.z=0;state.animTime=0}}
+ else if(state.anim==='reset'){state.animTime+=dt;const p=Math.min(1,state.animTime/.72);pirate.position.y=1.78*(1-p)+.35*p;pirate.scale.setScalar(1-.8*p);pirate.rotation.x=-.18*p;if(p>=1){pirate.scale.setScalar(1);pirate.rotation.set(0,0,0);pirate.visible=false;nextRound()}}
+ else if(state.popped&&!state.dragging&&state.anim==='idle'){pirate.position.y=1.78+Math.sin(t*2.7)*.055;pirate.rotation.z=Math.sin(t*1.4)*.025;armL.rotation.z=Math.sin(t*2)*.08;armR.rotation.z=-Math.sin(t*2)*.08}
+ barrel.rotation.y=Math.sin(t*.45)*.012;
+ renderer.render(scene,camera)}
+animate();
+</script>
+</body>
+</html>
